@@ -11,3 +11,9 @@ This project demonstrates a basic CI/CD configuration with GitHub Actions.
 ## Testing
 
 Test coverage: >70%
+
+
+![Screenshot 1](images/image.png)
+![Screenshot 2](images/image(1).png)
+![Screenshot 3](images/image (2).png)
+![Screenshot 4](images/image(1) (3).png)
