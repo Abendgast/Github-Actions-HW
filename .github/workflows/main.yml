@@ -16,22 +16,19 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Set up Python Path
-        run: echo "PYTHONPATH=$PYTHONPATH:$(pwd)" >> $GITHUB_ENV
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Install package
-        run: |
-          pip install -e .
-          echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV
+        run: pip install -e .
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV  # Додає myapp у шлях
 
       - name: Run tests with coverage
-        run: |
-          pytest --cov=myapp tests/ --cov-report=xml --cov-report=html
+        run: pytest --cov=myapp tests/ --cov-report=xml --cov-report=html
 
       - name: Check coverage threshold
         run: coverage report --fail-under=70
@@ -41,35 +38,3 @@ jobs:
         with:
           name: coverage-report
           path: htmlcov/
-
-  build:
-    needs: test
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-
-      - name: Build step
-        run: echo "Build successful!"
-
-      - name: Update README with build badge
-        run: |
-          BADGE="![workflow-badge](https://github.com/${{ github.repository }}/actions/workflows/main.yml/badge.svg)"
-          if [ -f README.md ] && ! grep -q "workflow-badge" README.md; then
-            echo "$BADGE" > temp_readme.md
-            echo "" >> temp_readme.md
-            cat README.md >> temp_readme.md
-            mv temp_readme.md README.md
-
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            git add README.md
-            git commit -m "Add workflow badge to README [skip ci]"
-            git push
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
