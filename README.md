@@ -14,6 +14,6 @@ Test coverage: >70%
 
 
 ![Screenshot 1](images/image.png)
-![Screenshot 2](images/image(1).png)
-![Screenshot 3](images/image (2).png)
-![Screenshot 4](images/image(1) (3).png)
+![Screenshot 2](images/image2.png)
+![Screenshot 3](images/image3.png)
+![Screenshot 4](images/image4.png)
