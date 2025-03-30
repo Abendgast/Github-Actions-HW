@@ -22,19 +22,51 @@ jobs:
           pip install -r requirements.txt
 
       - name: Install package
-        run: pip install -e .
-
-      - name: Set PYTHONPATH
-        run: echo "PYTHONPATH=$(pwd)" >> $GITHUB_ENV  # Додає myapp у шлях
+        run: |
+          pip install -e .
+          pip list | grep myapp  # Перевіряємо, чи встановлено пакет
 
       - name: Run tests with coverage
-        run: pytest --cov=myapp tests/ --cov-report=xml --cov-report=html
+        run: |
+          PYTHONPATH=$(pwd) pytest --cov=myapp tests/ --cov-report=xml --cov-report=html
 
       - name: Check coverage threshold
-        run: coverage report --fail-under=70
+        run: |
+          coverage report --fail-under=70
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: htmlcov/
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Build step
+        run: echo "Build successful!"
+
+      - name: Update README with build badge
+        run: |
+          if [ -f README.md ] && ! grep -q "workflow-badge" README.md; then
+            echo "![workflow-badge](https://github.com/${{ github.repository }}/actions/workflows/ci.yml/badge.svg)" > temp_readme.md
+            echo "" >> temp_readme.md
+            cat README.md >> temp_readme.md
+            mv temp_readme.md README.md
+
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add README.md
+            git commit -m "Add workflow badge to README [skip ci]"
+            git push
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
