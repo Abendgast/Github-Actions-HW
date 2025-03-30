@@ -19,6 +19,7 @@ jobs:
           pip install -r requirements.txt
       - name: Run tests with coverage
         run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
           pytest --cov=myapp tests/ --cov-report=xml --cov-report=html
       - name: Check coverage threshold
         run: |
@@ -43,9 +44,7 @@ jobs:
           echo "Build successful!"
       - name: Update README with build badge
         run: |
-          # Перевіряємо, чи бейдж уже існує в README.md
           if [ -f README.md ] && ! grep -q "workflow-badge" README.md; then
-            # Якщо бейджа немає, додаємо його
             echo "![workflow-badge](https://github.com/${{ github.repository }}/actions/workflows/ci.yml/badge.svg)" > temp_readme.md
             echo "" >> temp_readme.md
             if [ -f README.md ]; then
@@ -53,7 +52,6 @@ jobs:
             fi
             mv temp_readme.md README.md
             
-            # Комітимо і пушимо зміни в README.md
             git config --local user.email "action@github.com"
             git config --local user.name "GitHub Action"
             git add README.md
