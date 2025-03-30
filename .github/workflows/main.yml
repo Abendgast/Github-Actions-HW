@@ -1,44 +1,62 @@
-name: Python Application Test and Coverage
+name: CI/CD Pipeline
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ develop ]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-      
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-        
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        
-    - name: Test with pytest and coverage
-      run: |
-        pytest --cov=myapp tests/ --cov-report=xml --cov-report=term-missing
-        
-    - name: Check coverage threshold
-      run: |
-        coverage_percentage=$(pytest --cov=myapp tests/ --cov-report=term-missing | grep TOTAL | awk '{print $4}' | sed 's/%//')
-        echo "Coverage: $coverage_percentage%"
-        if (( $(echo "$coverage_percentage < 70" | bc -l) )); then
-          echo "Code coverage is below 70%. Current coverage: $coverage_percentage%"
-          exit 1
-        fi
-        
-    - name: Upload coverage report
-      uses: actions/upload-artifact@v3
-      with:
-        name: coverage-report
-        path: coverage.xml
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run tests with coverage
+        run: |
+          export PYTHONPATH=$PYTHONPATH:$(pwd)
+          pytest --cov=myapp tests/ --cov-report=xml --cov-report=html
+      - name: Check coverage threshold
+        run: |
+          coverage report --fail-under=70
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: htmlcov/
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Build step
+        run: |
+          echo "Build successful!"
+      - name: Update README with build badge
+        run: |
+          if [ -f README.md ] && ! grep -q "workflow-badge" README.md; then
+            echo "![workflow-badge](https://github.com/${{ github.repository }}/actions/workflows/ci.yml/badge.svg)" > temp_readme.md
+            echo "" >> temp_readme.md
+            if [ -f README.md ]; then
+              cat README.md >> temp_readme.md
+            fi
+            mv temp_readme.md README.md
+            
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add README.md
+            git commit -m "Add workflow badge to README [skip ci]"
+            git push
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
